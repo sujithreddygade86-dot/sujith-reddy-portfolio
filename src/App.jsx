@@ -32,6 +32,9 @@ const profile = {
   whatsapp: 'https://wa.me/919392593707?text=' + encodeURIComponent('Hi Sujith, I found your portfolio and would like to connect with you about a project.'),
 }
 
+const resumeUrl = `${import.meta.env.BASE_URL}Sujith-Reddy-Gade-Resume.pdf`
+const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
 const navItems = [
   { label: 'About', id: 'about' },
   { label: 'Skills', id: 'skills' },
@@ -166,7 +169,7 @@ function App() {
     setFormMessage('')
 
     try {
-      const response = await fetch('/api/messages', {
+      const response = await fetch(`${apiBaseUrl}/api/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -207,7 +210,7 @@ function App() {
             {navItems.map((item) => (
               <button key={item.id} onClick={() => scrollTo(item.id)}>{item.label}</button>
             ))}
-            <a className="nav-resume" href="/Sujith-Reddy-Gade-Resume.pdf" target="_blank" rel="noreferrer">
+            <a className="nav-resume" href={resumeUrl} target="_blank" rel="noreferrer">
               <FileText size={15} /> Resume
             </a>
             <button className="nav-cta" onClick={() => scrollTo('contact')}>
@@ -242,7 +245,7 @@ function App() {
                 <button className="button button-ghost" onClick={() => scrollTo('contact')}>
                   Start a conversation <ArrowDownRight size={17} />
                 </button>
-                <a className="button button-resume" href="/Sujith-Reddy-Gade-Resume.pdf" target="_blank" rel="noreferrer">
+                <a className="button button-resume" href={resumeUrl} target="_blank" rel="noreferrer">
                   View resume <FileText size={16} />
                 </a>
               </div>
