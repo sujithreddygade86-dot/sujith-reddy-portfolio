@@ -17,7 +17,7 @@ Open [http://localhost:5173](http://localhost:5173). The Vite dev server proxies
 
 Submitting the contact form sends a `POST /api/messages` request to the Express API. Every valid message is saved in the local SQLite database at `data/portfolio.db` in the `contact_messages` table.
 
-When Gmail SMTP is configured, the API also sends an email notification to `CONTACT_EMAIL`. The visitor's email is used as `replyTo`, so you can reply directly from Gmail.
+The API sends an email notification to `CONTACT_EMAIL`. Resend's HTTPS API is used when `RESEND_API_KEY` is set; otherwise local development can use Gmail SMTP. The visitor's email is set as the reply-to address, so you can reply directly to them.
 
 ### Configure Gmail delivery locally
 
@@ -28,7 +28,7 @@ When Gmail SMTP is configured, the API also sends an email notification to `CONT
 
 The `.env` file is ignored by git and must never be committed. For a deployed backend such as Render, add the same variables in the service's Environment settings instead of uploading `.env`.
 
-If SMTP is not configured or Gmail rejects the message, the submission is still saved in SQLite and the form shows an error instead of claiming that an email was sent.
+If email delivery is not configured or the provider rejects the message, the submission is still saved in SQLite and the form reports that email could not be sent.
 
 The API also exposes:
 
@@ -51,10 +51,11 @@ Create a repository named `sujith-reddy-portfolio` and push the `main` branch.
 
 ### 2. Deploy the API on Render
 
-In Render, choose **New → Blueprint**, select the repository, and let Render read `render.yaml`. Add these private environment variables:
+In Render, choose **New → Blueprint**, select the repository, and let Render read `render.yaml`. Add this private environment variable when prompted:
 
-- `SMTP_USER` — `sujithreddygade86@gmail.com`
-- `SMTP_PASS` — your Gmail App Password
+- `RESEND_API_KEY` — the API key created in your Resend account
+
+Use the free Resend test sender `onboarding@resend.dev`. For this testing sender, set `CONTACT_EMAIL` to the same email address you used to create your Resend account; the test sender only delivers to that account address. This works for the portfolio because contact messages are notifications sent to you, and the visitor's email is included as the reply-to address. Resend's current free plan includes 3,000 emails per month with a 100-per-day limit. To send from a custom address or notify a different recipient, add and verify a domain with Resend and configure `RESEND_FROM`.
 
 After deployment, copy the Render service URL, for example `https://your-api.onrender.com`.
 

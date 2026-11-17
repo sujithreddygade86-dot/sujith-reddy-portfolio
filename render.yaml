@@ -9,15 +9,7 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 22.23.3
-      - key: SMTP_HOST
-        value: smtp.gmail.com
-      - key: SMTP_PORT
-        value: "465"
-      - key: SMTP_SECURE
-        value: "true"
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
+      - key: RESEND_API_KEY
         sync: false
       - key: CONTACT_EMAIL
         value: sujithreddygade86@gmail.com

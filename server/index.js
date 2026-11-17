@@ -24,6 +24,7 @@ database.exec(`
 `)
 
 const contactRecipient = process.env.CONTACT_EMAIL || 'sujithreddygade86@gmail.com'
+const resendConfigured = Boolean(process.env.RESEND_API_KEY)
 const smtpPort = Number(process.env.SMTP_PORT || 465)
 const smtpConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS)
 const mailTransport = smtpConfigured
@@ -75,8 +76,8 @@ app.post('/api/messages', async (request, response) => {
   ).run(cleanName, cleanEmail, cleanMessage)
   const messageId = result.lastInsertRowid
 
-  if (!mailTransport) {
-    console.warn('Contact message saved without email delivery: SMTP_USER/SMTP_PASS are not configured.')
+  if (!resendConfigured && !mailTransport) {
+    console.warn('Contact message saved without email delivery: configure RESEND_API_KEY or local SMTP credentials.')
     return response.status(503).json({
       ok: false,
       saved: true,
@@ -87,22 +88,47 @@ app.post('/api/messages', async (request, response) => {
 
   const safeName = cleanName.replace(/[\r\n]/g, ' ')
   const safeMessage = escapeHtml(cleanMessage).replace(/\n/g, '<br />')
+  const subject = `New portfolio message from ${safeName}`
+  const text = `You received a new message from your portfolio.\n\nName: ${cleanName}\nEmail: ${cleanEmail}\n\nMessage:\n${cleanMessage}`
+  const html = `
+    <h2>New portfolio message</h2>
+    <p><strong>Name:</strong> ${escapeHtml(cleanName)}</p>
+    <p><strong>Email:</strong> ${escapeHtml(cleanEmail)}</p>
+    <p><strong>Message:</strong></p>
+    <p>${safeMessage}</p>
+  `
 
   try {
-    await mailTransport.sendMail({
-      from: process.env.SMTP_USER,
-      to: contactRecipient,
-      replyTo: cleanEmail,
-      subject: `New portfolio message from ${safeName}`,
-      text: `You received a new message from your portfolio.\n\nName: ${cleanName}\nEmail: ${cleanEmail}\n\nMessage:\n${cleanMessage}`,
-      html: `
-        <h2>New portfolio message</h2>
-        <p><strong>Name:</strong> ${escapeHtml(cleanName)}</p>
-        <p><strong>Email:</strong> ${escapeHtml(cleanEmail)}</p>
-        <p><strong>Message:</strong></p>
-        <p>${safeMessage}</p>
-      `,
-    })
+    if (resendConfigured) {
+      const mailResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: process.env.RESEND_FROM || 'onboarding@resend.dev',
+          to: [contactRecipient],
+          reply_to: cleanEmail,
+          subject,
+          text,
+          html,
+        }),
+      })
+      const mailResult = await mailResponse.json().catch(() => ({}))
+      if (!mailResponse.ok) {
+        throw new Error(mailResult.message || `Resend API returned HTTP ${mailResponse.status}.`)
+      }
+    } else {
+      await mailTransport.sendMail({
+        from: process.env.SMTP_USER,
+        to: contactRecipient,
+        replyTo: cleanEmail,
+        subject,
+        text,
+        html,
+      })
+    }
   } catch (error) {
     console.error('Contact message email delivery failed:', error)
     return response.status(503).json({
