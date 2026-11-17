@@ -177,6 +177,15 @@ function App() {
       const payload = await response.json().catch(() => ({}))
 
       if (!response.ok) {
+        if (payload.saved) {
+          // The API persisted this submission, so clear it to avoid duplicate
+          // messages if the visitor tries again after an email delivery failure.
+          setForm({ name: '', email: '', message: '' })
+          setFormState('error')
+          setFormMessage(payload.error || 'Your message was saved, but the email notification could not be sent. Please try again later.')
+          return
+        }
+
         const fallbackMessage = response.status >= 500
           ? 'The contact service is temporarily unavailable. Please try again in a moment.'
           : 'Unable to send your message.'
